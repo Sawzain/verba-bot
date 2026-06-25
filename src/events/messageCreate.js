@@ -8,7 +8,7 @@ import {
 const cooldowns = new Map();
 
 export const handleMessageCreate = async (message) => {
-  if (message.author.bot || message.content.length < 15) {
+  if (message.author.bot || message.content.split(/\s+/).length < 10) {
     console.log(
       "SKIPPED: bot message or too short (length:",
       message.content.length,
