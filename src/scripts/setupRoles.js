@@ -2,15 +2,18 @@ import "dotenv/config";
 import { Client, GatewayIntentBits } from "discord.js";
 
 const ROLES_TO_CREATE = [
-  "Poet I",
-  "Poet II",
-  "Poet III",
-  "Quote Keeper I",
-  "Quote Keeper II",
-  "Quote Keeper III",
+  "Versifier",
+  "Lyricist",
+  "Laureate",
+  "Collector",
+  "Curator",
+  "Archivist",
   "Reviewer",
   "Goal Setter",
   "Veteran Reader",
+  "Chatterbox",
+  "Conversationalist",
+  "Orator", // ← new
 ];
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
