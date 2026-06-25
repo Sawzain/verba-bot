@@ -1,4 +1,7 @@
 import roleConfig from "../config/roleTiers.js";
+import { supabase } from "../db/supabase.js";
+
+const LOG_CHANNEL_ID = "1519821472850378804";
 
 export const grantVeteranReaderRole = async (member) => {
   const guildJoinDate = member.joinedAt;
@@ -12,7 +15,7 @@ export const grantVeteranReaderRole = async (member) => {
     return false;
   }
 
-  if (member.roles.cache.has(veteranRoleId)) return false; // already has it
+  if (member.roles.cache.has(veteranRoleId)) return false;
 
   try {
     await member.roles.add(veteranRoleId);
@@ -25,4 +28,29 @@ export const grantVeteranReaderRole = async (member) => {
     );
     return false;
   }
+};
+
+export const handleGuildMemberAdd = async (member) => {
+  try {
+    await supabase
+      .from("activity_counts")
+      .delete()
+      .eq("user_id", member.user.id)
+      .eq("guild_id", member.guild.id);
+
+    const logChannel = await member.guild.channels
+      .fetch(LOG_CHANNEL_ID)
+      .catch(() => null);
+    if (logChannel) {
+      await logChannel.send(
+        `🔄 **${member.user.username}** rejoined — activity counts reset`,
+      );
+    }
+
+    console.log(`Reset counts for rejoined member ${member.user.tag}`);
+  } catch (error) {
+    console.error(`Error resetting counts for ${member.user.tag}:`, error);
+  }
+
+  await grantVeteranReaderRole(member);
 };

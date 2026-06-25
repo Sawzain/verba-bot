@@ -66,8 +66,8 @@ export const handleMessageCreate = async (message) => {
         console.log(
           `Updated ${message.author.tag}'s role to ${qualifyingTier.roleName}`,
         );
-        await message.reply(
-          `Congratulations! You are now a ${qualifyingTier.roleName}.`,
+        await message.author.send(
+          `Congratulations! You are now a **${qualifyingTier.roleName}** in **${message.guild.name}**! 🎉`,
         );
       }
     }
