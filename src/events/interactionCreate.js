@@ -7,6 +7,7 @@ const LOG_CHANNEL_ID = "1519821472850378804";
 export const handleInteraction = async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
+  // --- Rank Command ---
   if (interaction.commandName === "rank") {
     await interaction.deferReply({ ephemeral: true });
 
@@ -16,10 +17,7 @@ export const handleInteraction = async (interaction) => {
       .eq("user_id", interaction.user.id)
       .eq("guild_id", interaction.guildId);
 
-    if (error) {
-      await interaction.editReply("Error fetching your rank.");
-      return;
-    }
+    if (error) return interaction.editReply("Error fetching your rank.");
 
     let response = `📊 **Your Activity Counts:**\n\n`;
     for (const channel of roleConfig.CHANNELS) {
@@ -31,10 +29,10 @@ export const handleInteraction = async (interaction) => {
       const tierName = highestTier ? highestTier.roleName : "No role yet";
       response += `**${channel.key}:** ${count} messages — ${tierName}\n`;
     }
-
     await interaction.editReply(response);
   }
 
+  // --- Leaderboard Command ---
   if (interaction.commandName === "leaderboard") {
     await interaction.deferReply();
     const channelKey = interaction.options.getString("channel");
@@ -47,15 +45,9 @@ export const handleInteraction = async (interaction) => {
       .order("count", { ascending: false })
       .limit(10);
 
-    if (error) {
-      await interaction.editReply("Error fetching leaderboard.");
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      await interaction.editReply("No activity recorded yet!");
-      return;
-    }
+    if (error) return interaction.editReply("Error fetching leaderboard.");
+    if (!data || data.length === 0)
+      return interaction.editReply("No activity recorded yet!");
 
     let response = `🏆 **Leaderboard — ${channelKey}:**\n\n`;
     for (let i = 0; i < data.length; i++) {
@@ -65,19 +57,18 @@ export const handleInteraction = async (interaction) => {
       const name = member ? member.user.username : "Unknown User";
       response += `**${i + 1}.** ${name} — ${data[i].count} messages\n`;
     }
-
     await interaction.editReply(response);
   }
 
+  // --- Reset Command ---
   if (interaction.commandName === "reset") {
     if (
       !interaction.member.permissions.has(PermissionFlagsBits.Administrator)
     ) {
-      await interaction.reply({
+      return interaction.reply({
         content: "You need to be an admin to use this command.",
         ephemeral: true,
       });
-      return;
     }
 
     await interaction.deferReply({ ephemeral: true });
