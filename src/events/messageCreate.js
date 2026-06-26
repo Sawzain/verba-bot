@@ -8,13 +8,25 @@ import {
 const cooldowns = new Map();
 
 export const handleMessageCreate = async (message) => {
-  if (message.author.bot || message.content.split(/\s+/).length < 10) {
-    console.log(
-      "SKIPPED: bot message or too short (length:",
-      message.content.length,
-      ")",
-    );
-    return;
+  if (message.author.bot) return;
+
+  const channelConfig = roleTiers.CHANNELS.find(
+    (c) => c.channelId === message.channel.id,
+  );
+  
+  if (!channelConfig) return;
+
+  // NEW LOGIC: Only apply 10-word/quote rule to specific channels
+  const restrictedKeys = ["poetry-corner", "quotes-highlights"];
+  
+  if (restrictedKeys.includes(channelConfig.key)) {
+    const wordCount = message.content.split(/\s+/).length;
+    const isQuote = message.content.trim().startsWith('>');
+    
+    if (wordCount < 10 && !isQuote) {
+      console.log(`SKIPPED: ${channelConfig.key} message too short`);
+      return;
+    }
   }
 
   const cooldownKey = `${message.author.id}-${message.channelId}`;
@@ -22,17 +34,6 @@ export const handleMessageCreate = async (message) => {
     console.log("SKIPPED: on cooldown");
     return;
   }
-
-  const channelConfig = roleTiers.CHANNELS.find(
-    (c) => c.channelId === message.channel.id,
-  );
-  console.log(
-    "Message channel ID:",
-    message.channel.id,
-    "| Matched config:",
-    channelConfig ? channelConfig.key : "NONE",
-  );
-  if (!channelConfig) return;
 
   cooldowns.set(cooldownKey, Date.now());
   setTimeout(() => cooldowns.delete(cooldownKey), 60 * 1000);
@@ -43,18 +44,14 @@ export const handleMessageCreate = async (message) => {
       message.guild.id,
       channelConfig.key,
     );
-    console.log("New count:", newCount);
-    if (newCount === null) {
-      console.error(
-        `Failed to get incremented activity count for ${message.author.id}`,
-      );
-      return;
-    }
+    
+    if (newCount === null) return;
+
     const qualifyingTier = findHighestQualifyingTier(
       newCount,
       channelConfig.tiers,
     );
-    console.log("Qualifying tier:", qualifyingTier);
+    
     if (qualifyingTier) {
       const allTierRoleIds = channelConfig.tiers.map((tier) => tier.roleId);
       const roleChanged = await updateMemberTierRole(
@@ -63,18 +60,12 @@ export const handleMessageCreate = async (message) => {
         qualifyingTier,
       );
       if (roleChanged) {
-        console.log(
-          `Updated ${message.author.tag}'s role to ${qualifyingTier.roleName}`,
-        );
         await message.author.send(
           `Congratulations! You are now a **${qualifyingTier.roleName}** in **${message.guild.name}**! 🎉`,
         );
       }
     }
   } catch (error) {
-    console.error(
-      `Error handling message create for ${message.author.tag}:`,
-      error,
-    );
+    console.error(`Error handling message create for ${message.author.tag}:`, error);
   }
 };
