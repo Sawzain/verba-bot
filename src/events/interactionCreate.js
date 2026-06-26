@@ -81,32 +81,37 @@ export const handleInteraction = async (interaction) => {
     }
 
     await interaction.deferReply({ ephemeral: true });
-    const targetUser = interaction.options.getUser("user");
-    const channelKey = interaction.options.getString("channel");
 
-    const { error } = await supabase
-      .from("activity_counts")
-      .update({ count: 0 })
-      .eq("user_id", targetUser.id)
-      .eq("guild_id", interaction.guildId)
-      .eq("channel_key", channelKey);
+    try {
+      const targetUser = interaction.options.getUser("user");
+      const channelKey = interaction.options.getString("channel");
 
-    if (error) {
-      await interaction.editReply("Error resetting count.");
-      return;
-    }
+      const { error } = await supabase
+        .from("activity_counts")
+        .update({ count: 0 })
+        .eq("user_id", targetUser.id)
+        .eq("guild_id", interaction.guildId)
+        .eq("channel_key", channelKey);
 
-    const logChannel = await interaction.guild.channels
-      .fetch(LOG_CHANNEL_ID)
-      .catch(() => null);
-    if (logChannel) {
-      await logChannel.send(
-        `🔄 **${interaction.user.username}** reset **${targetUser.username}**'s count in **${channelKey}**`,
+      if (error) throw error;
+
+      const logChannel = await interaction.guild.channels
+        .fetch(LOG_CHANNEL_ID)
+        .catch(() => null);
+      if (logChannel) {
+        await logChannel.send(
+          `🔄 **${interaction.user.username}** reset **${targetUser.username}**'s count in **${channelKey}**`,
+        );
+      }
+
+      await interaction.editReply(
+        `Reset ${targetUser.username}'s count in ${channelKey}.`,
+      );
+    } catch (err) {
+      console.error("Reset command failed:", err);
+      await interaction.editReply(
+        `Failed to reset count: ${err.message || "Unknown error"}`,
       );
     }
-
-    await interaction.editReply(
-      `Reset ${targetUser.username}'s count in ${channelKey}.`,
-    );
   }
 };
