@@ -12,11 +12,19 @@ export const handleInteraction = async (interaction) => {
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      const { data, error } = await supabase
+      const queryPromise = supabase
         .from("activity_counts")
         .select("*")
         .eq("user_id", interaction.user.id)
         .eq("guild_id", interaction.guildId);
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Supabase query timed out")), 5000),
+      );
+      const { data, error } = await Promise.race([
+        queryPromise,
+        timeoutPromise,
+      ]);
 
       if (error) {
         console.error("Supabase error (rank):", error);
@@ -36,7 +44,7 @@ export const handleInteraction = async (interaction) => {
       await interaction.editReply(response);
     } catch (err) {
       console.error("Rank command failed:", err);
-      await interaction.editReply("Something went wrong.");
+      await interaction.editReply(`Something went wrong: ${err.message}`);
     }
   }
 
@@ -47,13 +55,22 @@ export const handleInteraction = async (interaction) => {
     try {
       const channelKey = interaction.options.getString("channel");
 
-      const { data, error } = await supabase
+      const queryPromise = supabase
         .from("activity_counts")
         .select("*")
         .eq("guild_id", interaction.guildId)
         .eq("channel_key", channelKey)
         .order("count", { ascending: false })
         .limit(10);
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Supabase query timed out")), 5000),
+      );
+
+      const { data, error } = await Promise.race([
+        queryPromise,
+        timeoutPromise,
+      ]);
 
       if (error) {
         console.error("Supabase error (leaderboard):", error);
@@ -73,7 +90,7 @@ export const handleInteraction = async (interaction) => {
       await interaction.editReply(response);
     } catch (err) {
       console.error("Leaderboard command failed:", err);
-      await interaction.editReply("Something went wrong.");
+      await interaction.editReply(`Something went wrong: ${err.message}`);
     }
   }
 
