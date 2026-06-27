@@ -9,7 +9,7 @@ export const handleInteraction = async (interaction) => {
 
   // --- Rank Command ---
   if (interaction.commandName === "rank") {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
 
     const { data, error } = await supabase
       .from("activity_counts")
