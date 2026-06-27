@@ -1,17 +1,25 @@
 export const roleConfig = {
   ROLE_IDS: {
-    VERSIFIER: "1519812905682600006",
-    LYRICIST: "1519812907494412349",
-    LAUREATE: "1519812909549748466",
-    COLLECTOR: "1519812911361691769",
-    CURATOR: "1519812913395662897",
-    ARCHIVIST: "1519812915245351015",
-    REVIEWER: "1519772854294548671",
-    GOAL_SETTER: "1519772856093774087",
-    VETERAN_READER: "1519812916952432782",
-    CHATTERBOX: "1519812919033069568",
-    CONVERSATIONALIST: "1519812920333041808",
-    ORATOR: "1519812922899959828",
+    // Poetry Corner
+    STANZA_SEED: "1520438903092543629",
+    VERSE_WEAVER: "1520438905185243216",
+    POET_LAUREATE: "1520438907307819194",
+    // Quotes & Highlights
+    HIGHLIGHT_SCOUT: "1520438909560160287",
+    PASSAGE_CURATOR: "1520438911632015380",
+    MEMORY_KEEPER: "1520438913347489852",
+    // Monthly Reviews
+    SEASONED_READER: "1520438914849177742",
+    // Reading Goals
+    READER: "1520438917290266705",
+    DEDICATED_READER: "1520438920012107846",
+    BOOKKEEPER: "1520438922084089997",
+    // Time-based
+    BOOK_SAGE: "1520438925204656188",
+    // General Chat
+    PAGE_CHATTER: "1520438927490814102",
+    CONVERSATIONALIST: "1520438929998745680",
+    ORATOR: "1520438932477575209",
   },
   CHANNELS: [
     {
@@ -19,9 +27,21 @@ export const roleConfig = {
       key: "poetry-corner",
       type: "tiered",
       tiers: [
-        { threshold: 5, roleId: "1519812905682600006", roleName: "Versifier" },
-        { threshold: 20, roleId: "1519812907494412349", roleName: "Lyricist" },
-        { threshold: 50, roleId: "1519812909549748466", roleName: "Laureate" },
+        {
+          threshold: 5,
+          roleId: "1520438903092543629",
+          roleName: "Stanza Seed",
+        },
+        {
+          threshold: 20,
+          roleId: "1520438905185243216",
+          roleName: "Verse Weaver",
+        },
+        {
+          threshold: 50,
+          roleId: "1520438907307819194",
+          roleName: "Poet Laureate",
+        },
       ],
     },
     {
@@ -29,9 +49,21 @@ export const roleConfig = {
       key: "quotes-highlights",
       type: "tiered",
       tiers: [
-        { threshold: 5, roleId: "1519812911361691769", roleName: "Collector" },
-        { threshold: 20, roleId: "1519812913395662897", roleName: "Curator" },
-        { threshold: 50, roleId: "1519812915245351015", roleName: "Archivist" },
+        {
+          threshold: 5,
+          roleId: "1520438909560160287",
+          roleName: "Highlight Scout",
+        },
+        {
+          threshold: 20,
+          roleId: "1520438911632015380",
+          roleName: "Passage Curator",
+        },
+        {
+          threshold: 50,
+          roleId: "1520438913347489852",
+          roleName: "Memory Keeper",
+        },
       ],
     },
     {
@@ -39,18 +71,28 @@ export const roleConfig = {
       key: "monthly-reviews",
       type: "single",
       tiers: [
-        { threshold: 1, roleId: "1519772854294548671", roleName: "Reviewer" },
+        {
+          threshold: 1,
+          roleId: "1520438914849177742",
+          roleName: "Seasoned Reader",
+        },
       ],
     },
     {
       channelId: "1467611752278659072",
       key: "reading-goals",
-      type: "single",
+      type: "tiered",
       tiers: [
+        { threshold: 1, roleId: "1520438917290266705", roleName: "Reader" },
         {
-          threshold: 1,
-          roleId: "1519772856093774087",
-          roleName: "Goal Setter",
+          threshold: 10,
+          roleId: "1520438920012107846",
+          roleName: "Dedicated Reader",
+        },
+        {
+          threshold: 25,
+          roleId: "1520438922084089997",
+          roleName: "Bookkeeper",
         },
       ],
     },
@@ -61,15 +103,15 @@ export const roleConfig = {
       tiers: [
         {
           threshold: 50,
-          roleId: "1519812919033069568",
-          roleName: "Chatterbox",
+          roleId: "1520438927490814102",
+          roleName: "Page Chatter",
         },
         {
           threshold: 250,
-          roleId: "1519812920333041808",
+          roleId: "1520438929998745680",
           roleName: "Conversationalist",
         },
-        { threshold: 500, roleId: "1519812922899959828", roleName: "Orator" },
+        { threshold: 500, roleId: "1520438932477575209", roleName: "Orator" },
       ],
     },
   ],

@@ -6,7 +6,7 @@ export const isVeteranReaderEligible = (member) => {
 };
 
 export const runVeteranReaderCheck = async (guild) => {
-  const veteranRoleId = roleConfig.ROLE_IDS.VETERAN_READER;
+  const veteranRoleId = roleConfig.ROLE_IDS.BOOK_SAGE;
   if (!veteranRoleId) {
     console.error("VETERAN_READER role ID not set in roleTiers.js");
     return;
