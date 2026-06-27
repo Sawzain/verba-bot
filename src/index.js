@@ -4,6 +4,7 @@ import { Client, GatewayIntentBits, REST, Routes } from "discord.js";
 import { handleMessageCreate } from "./events/messageCreate.js";
 import { handleGuildMemberAdd } from "./events/guildMemberAdd.js";
 import { handleInteraction } from "./events/interactionCreate.js";
+import { runVeteranReaderCheck } from "./lib/veteranReader.js";
 
 const client = new Client({
   intents: [
@@ -76,21 +77,14 @@ client.once("clientReady", async () => {
   );
   console.log("Slash commands registered!");
 
+  console.log("Running initial Veteran Reader check...");
+  const guild = await client.guilds.fetch(process.env.GUILD_ID);
+  await runVeteranReaderCheck(guild);
+
   cron.schedule("0 0 * * *", async () => {
-    console.log("Running Veteran Reader cron job...");
-    try {
-      const guild = await client.guilds.fetch(process.env.GUILD_ID);
-      const members = await guild.members.fetch();
-      let granted = 0;
-      for (const [, member] of members) {
-        if (member.user.bot) continue;
-        const wasGranted = await grantVeteranReaderRole(member);
-        if (wasGranted) granted++;
-      }
-      console.log(`Veteran Reader cron done. Granted to ${granted} members.`);
-    } catch (error) {
-      console.error("Error in Veteran Reader cron job:", error);
-    }
+    console.log("Running scheduled Veteran Reader check...");
+    const guild = await client.guilds.fetch(process.env.GUILD_ID);
+    await runVeteranReaderCheck(guild);
   });
 });
 

@@ -59,7 +59,6 @@ export const handleInteraction = async (interaction) => {
     }
     await interaction.editReply(response);
   }
-
   // --- Reset Command ---
   if (interaction.commandName === "reset") {
     if (
@@ -86,17 +85,42 @@ export const handleInteraction = async (interaction) => {
 
       if (error) throw error;
 
+      // Also strip any tier role the member earned for this channel
+      const channelConfig = roleConfig.CHANNELS.find(
+        (c) => c.key === channelKey,
+      );
+      if (channelConfig) {
+        const targetMember = await interaction.guild.members
+          .fetch(targetUser.id)
+          .catch(() => null);
+        if (targetMember) {
+          const tierRoleIds = channelConfig.tiers.map((t) => t.roleId);
+          for (const roleId of tierRoleIds) {
+            if (targetMember.roles.cache.has(roleId)) {
+              await targetMember.roles
+                .remove(roleId)
+                .catch((err) =>
+                  console.error(
+                    `Failed to remove role ${roleId}:`,
+                    err.message,
+                  ),
+                );
+            }
+          }
+        }
+      }
+
       const logChannel = await interaction.guild.channels
         .fetch(LOG_CHANNEL_ID)
         .catch(() => null);
       if (logChannel) {
         await logChannel.send(
-          `🔄 **${interaction.user.username}** reset **${targetUser.username}**'s count in **${channelKey}**`,
+          `🔄 **${interaction.user.username}** reset **${targetUser.username}**'s count and roles in **${channelKey}**`,
         );
       }
 
       await interaction.editReply(
-        `Reset ${targetUser.username}'s count in ${channelKey}.`,
+        `Reset ${targetUser.username}'s count and tier roles in ${channelKey}.`,
       );
     } catch (err) {
       console.error("Reset command failed:", err);
