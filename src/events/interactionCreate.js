@@ -11,54 +11,72 @@ export const handleInteraction = async (interaction) => {
   if (interaction.commandName === "rank") {
     await interaction.deferReply({ ephemeral: true });
 
-    const { data, error } = await supabase
-      .from("activity_counts")
-      .select("*")
-      .eq("user_id", interaction.user.id)
-      .eq("guild_id", interaction.guildId);
+    try {
+      const { data, error } = await supabase
+        .from("activity_counts")
+        .select("*")
+        .eq("user_id", interaction.user.id)
+        .eq("guild_id", interaction.guildId);
 
-    if (error) return interaction.editReply("Error fetching your rank.");
+      if (error) {
+        console.error("Supabase error (rank):", error);
+        return interaction.editReply("Error fetching your rank.");
+      }
 
-    let response = `📊 **Your Activity Counts:**\n\n`;
-    for (const channel of roleConfig.CHANNELS) {
-      const row = data.find((r) => r.channel_key === channel.key);
-      const count = row ? row.count : 0;
-      const highestTier = channel.tiers
-        .filter((t) => t.threshold <= count)
-        .sort((a, b) => b.threshold - a.threshold)[0];
-      const tierName = highestTier ? highestTier.roleName : "No role yet";
-      response += `**${channel.key}:** ${count} messages — ${tierName}\n`;
+      let response = `📊 **Your Activity Counts:**\n\n`;
+      for (const channel of roleConfig.CHANNELS) {
+        const row = data.find((r) => r.channel_key === channel.key);
+        const count = row ? row.count : 0;
+        const highestTier = channel.tiers
+          .filter((t) => t.threshold <= count)
+          .sort((a, b) => b.threshold - a.threshold)[0];
+        const tierName = highestTier ? highestTier.roleName : "No role yet";
+        response += `**${channel.key}:** ${count} messages — ${tierName}\n`;
+      }
+      await interaction.editReply(response);
+    } catch (err) {
+      console.error("Rank command failed:", err);
+      await interaction.editReply("Something went wrong.");
     }
-    await interaction.editReply(response);
   }
 
   // --- Leaderboard Command ---
   if (interaction.commandName === "leaderboard") {
     await interaction.deferReply();
-    const channelKey = interaction.options.getString("channel");
 
-    const { data, error } = await supabase
-      .from("activity_counts")
-      .select("*")
-      .eq("guild_id", interaction.guildId)
-      .eq("channel_key", channelKey)
-      .order("count", { ascending: false })
-      .limit(10);
+    try {
+      const channelKey = interaction.options.getString("channel");
 
-    if (error) return interaction.editReply("Error fetching leaderboard.");
-    if (!data || data.length === 0)
-      return interaction.editReply("No activity recorded yet!");
+      const { data, error } = await supabase
+        .from("activity_counts")
+        .select("*")
+        .eq("guild_id", interaction.guildId)
+        .eq("channel_key", channelKey)
+        .order("count", { ascending: false })
+        .limit(10);
 
-    let response = `🏆 **Leaderboard — ${channelKey}:**\n\n`;
-    for (let i = 0; i < data.length; i++) {
-      const member = await interaction.guild.members
-        .fetch(data[i].user_id)
-        .catch(() => null);
-      const name = member ? member.user.username : "Unknown User";
-      response += `**${i + 1}.** ${name} — ${data[i].count} messages\n`;
+      if (error) {
+        console.error("Supabase error (leaderboard):", error);
+        return interaction.editReply("Error fetching leaderboard.");
+      }
+      if (!data || data.length === 0)
+        return interaction.editReply("No activity recorded yet!");
+
+      let response = `🏆 **Leaderboard — ${channelKey}:**\n\n`;
+      for (let i = 0; i < data.length; i++) {
+        const member = await interaction.guild.members
+          .fetch(data[i].user_id)
+          .catch(() => null);
+        const name = member ? member.user.username : "Unknown User";
+        response += `**${i + 1}.** ${name} — ${data[i].count} messages\n`;
+      }
+      await interaction.editReply(response);
+    } catch (err) {
+      console.error("Leaderboard command failed:", err);
+      await interaction.editReply("Something went wrong.");
     }
-    await interaction.editReply(response);
   }
+
   // --- Reset Command ---
   if (interaction.commandName === "reset") {
     if (
@@ -85,7 +103,6 @@ export const handleInteraction = async (interaction) => {
 
       if (error) throw error;
 
-      // Also strip any tier role the member earned for this channel
       const channelConfig = roleConfig.CHANNELS.find(
         (c) => c.key === channelKey,
       );
