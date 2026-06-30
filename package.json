@@ -20,5 +20,8 @@
   },
   "overrides": {
     "undici": "^6.27.0"
+  },
+  "devDependencies": {
+    "eslint": "^10.6.0"
   }
 }
