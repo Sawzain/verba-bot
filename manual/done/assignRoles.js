@@ -1,11 +1,11 @@
 import 'dotenv/config';
 import { Client, GatewayIntentBits } from 'discord.js';
-import { supabase } from '../src/db/supabase.js';
-import roleConfig from '../src/config/roleTiers.js';
+import { supabase } from '../../src/db/supabase.js';
+import roleConfig from '../../src/config/roleTiers.js';
 import {
   findHighestQualifyingTier,
   updateMemberTierRole,
-} from '../src/lib/roleManager.js';
+} from '../../src/lib/roleManager.js';
 
 const GUILD_ID = process.env.GUILD_ID;
 
