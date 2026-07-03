@@ -103,13 +103,23 @@ export const handleGuildMemberAdd = async (member) => {
     // Randomized welcome message
     const welcomeChannel = await member.guild.channels
       .fetch(WELCOME_CHANNEL_ID)
-      .catch(() => null);
+      .catch((err) => {
+        console.error(
+          `Could not fetch welcome channel ${WELCOME_CHANNEL_ID}:`,
+          err.message
+        );
+        return null;
+      });
 
     if (welcomeChannel) {
       const randomGreeting =
         GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
       await welcomeChannel.send(
         `${randomGreeting(member)} Come say hi in 👉 <#1465764681661546547> 💬`
+      );
+    } else {
+      console.warn(
+        `Skipped welcome message — channel ${WELCOME_CHANNEL_ID} not found or bot lacks access.`
       );
     }
   } catch (error) {
