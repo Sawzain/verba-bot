@@ -8,18 +8,20 @@ A Discord bot for the Verba Book Club server that tracks member activity and ass
 
 Automatically assigns roles based on message activity in specific channels.
 
-| Channel           | Roles                                   | Thresholds     |
-| ----------------- | --------------------------------------- | -------------- |
-| poetry-corner     | Versifier → Lyricist → Laureate         | 5 → 20 → 50    |
-| quotes-highlights | Collector → Curator → Archivist         | 5 → 20 → 50    |
-| monthly-reviews   | Reviewer                                | 1              |
-| reading-goals     | Goal Setter                             | 1              |
-| general-chat      | Chatterbox → Conversationalist → Orator | 50 → 250 → 500 |
+| Channel           | Roles                                              | Thresholds     | Count rule                          |
+| ----------------- | --------------------------------------------------- | -------------- | ------------------------------------ |
+| poetry-corner     | Stanza Seed → Verse Weaver → Poet Laureate           | 5 → 20 → 50    | 10+ words, a quote (`>`), or image   |
+| quotes-highlights | Highlight Scout → Passage Curator → Memory Keeper    | 5 → 20 → 50    | 10+ words, a quote (`>`), or image   |
+| monthly-reviews   | Seasoned Reader                                      | 1              | any message                          |
+| reading-goals     | Reader → Dedicated Reader → Bookkeeper               | 1 → 10 → 25    | any message                          |
+| general-chat      | Page Chatter → Conversationalist → Orator            | 50 → 250 → 500 | 3+ words or an attachment            |
+
+**Book Sage** is granted separately (see Veteran Reader below), independent of channel activity.
 
 ### ⏱️ Cooldown
 
 - 1 message counted per user per channel every **60 seconds**
-- Minimum **10 words** required to count
+- Word-count minimum varies by channel — see table above
 
 ### 🏅 Veteran Reader
 
@@ -57,15 +59,20 @@ npm install
 
 ### 2. Configure environment variables
 
-Create a `.env` file:
+Copy `.env.example` to `.env` and fill in the values:
 
+```bash
+cp .env.example .env
+```
+
+```
 DISCORD_TOKEN=your-discord-bot-token
-
 SUPABASE_URL=https://your-project.supabase.co
-
 SUPABASE_KEY=your-service-role-key
-
 GUILD_ID=your-guild-id
+```
+
+The `LOG_CHANNEL_ID`, `WELCOME_CHANNEL_ID`, `GENERAL_CHAT_CHANNEL_ID`, and `MEETING_CHANNEL_ID` vars are optional — if left blank, the bot falls back to this server's current channel IDs (see `src/config/channelIds.js`). Set them explicitly if deploying to a different server or if a channel is ever recreated with a new ID.
 
 ### 3. Set up Supabase
 

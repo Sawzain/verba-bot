@@ -71,21 +71,35 @@ const commands = [
 client.once('clientReady', async () => {
   console.log(`Logged in as ${client.user.tag}!`);
 
-  const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
-  await rest.put(
-    Routes.applicationGuildCommands(client.user.id, process.env.GUILD_ID),
-    { body: commands }
-  );
-  console.log('Slash commands registered!');
+  try {
+    const rest = new REST({ version: '10' }).setToken(
+      process.env.DISCORD_TOKEN
+    );
+    await rest.put(
+      Routes.applicationGuildCommands(client.user.id, process.env.GUILD_ID),
+      { body: commands }
+    );
+    console.log('Slash commands registered!');
+  } catch (error) {
+    console.error('Failed to register slash commands:', error.message);
+  }
 
-  console.log('Running initial Veteran Reader check...');
-  const guild = await client.guilds.fetch(process.env.GUILD_ID);
-  await runVeteranReaderCheck(guild);
-
-  cron.schedule('0 0 * * *', async () => {
-    console.log('Running scheduled Veteran Reader check...');
+  try {
+    console.log('Running initial Veteran Reader check...');
     const guild = await client.guilds.fetch(process.env.GUILD_ID);
     await runVeteranReaderCheck(guild);
+  } catch (error) {
+    console.error('Initial Veteran Reader check failed:', error.message);
+  }
+
+  cron.schedule('0 0 * * *', async () => {
+    try {
+      console.log('Running scheduled Veteran Reader check...');
+      const guild = await client.guilds.fetch(process.env.GUILD_ID);
+      await runVeteranReaderCheck(guild);
+    } catch (error) {
+      console.error('Scheduled Veteran Reader check failed:', error.message);
+    }
   });
   scheduleMeetingReminders(client);
   console.log('Meeting reminders scheduled!');
@@ -94,5 +108,24 @@ client.once('clientReady', async () => {
 client.on('messageCreate', handleMessageCreate);
 client.on('interactionCreate', handleInteraction);
 client.on('guildMemberAdd', handleGuildMemberAdd);
+
+// Global safety nets — without these, an error thrown outside a local
+// try/catch (or a rejected promise nobody awaited) can crash the whole
+// process with no useful context in the host's logs.
+client.on('error', (error) => {
+  console.error('[client] Discord client error:', error);
+});
+
+client.on('shardError', (error) => {
+  console.error('[client] Websocket shard error:', error);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[process] Unhandled promise rejection:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('[process] Uncaught exception:', error);
+});
 
 client.login(process.env.DISCORD_TOKEN);

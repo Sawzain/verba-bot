@@ -1,6 +1,6 @@
 import cron from 'node-cron';
+import { MEETING_CHANNEL_ID } from '../config/channelIds.js';
 
-const MEETING_CHANNEL_ID = '1463471405835358280';
 const EVENT_LINK =
   'https://discord.com/events/1462915739697549376/1462919586000146462';
 

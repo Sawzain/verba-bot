@@ -1,8 +1,7 @@
 import roleConfig from "../config/roleTiers.js";
 import { supabase } from "../db/supabase.js";
 import { PermissionFlagsBits } from "discord.js";
-
-const LOG_CHANNEL_ID = "1519821472850378804";
+import { LOG_CHANNEL_ID } from "../config/channelIds.js";
 
 export const handleInteraction = async (interaction) => {
   if (!interaction.isChatInputCommand()) return;

@@ -1,8 +1,9 @@
 import { supabase } from '../db/supabase.js';
-import { EmbedBuilder } from 'discord.js';
-
-const LOG_CHANNEL_ID = '1519821472850378804';
-const WELCOME_CHANNEL_ID = '1462915741434122424';
+import {
+  LOG_CHANNEL_ID,
+  WELCOME_CHANNEL_ID,
+  GENERAL_CHAT_CHANNEL_ID,
+} from '../config/channelIds.js';
 
 const GREETINGS = [
   (member) =>
@@ -81,51 +82,109 @@ const GREETINGS = [
     `👋 Welcome to the book club, ${member}! ✨ Verba whispers: **welcome, fellow reader,** your story starts here.`,
 ];
 
-export const handleGuildMemberAdd = async (member) => {
-  try {
-    await supabase
-      .from('activity_counts')
-      .delete()
-      .eq('user_id', member.user.id)
-      .eq('guild_id', member.guild.id);
+// Resets activity counts for this member/guild. Returns true if a row
+// actually existed (i.e. this really was a rejoin), false otherwise.
+const resetActivityCounts = async (member) => {
+  const { data, error } = await supabase
+    .from('activity_counts')
+    .delete()
+    .eq('user_id', member.user.id)
+    .eq('guild_id', member.guild.id)
+    .select();
 
+  if (error) {
+    console.error(
+      `[guildMemberAdd] Failed to reset activity counts for ${member.user.tag}:`,
+      error.message
+    );
+    return false;
+  }
+
+  return Array.isArray(data) && data.length > 0;
+};
+
+const logRejoin = async (member) => {
+  try {
     const logChannel = await member.guild.channels
       .fetch(LOG_CHANNEL_ID)
-      .catch(() => null);
-    if (logChannel) {
-      await logChannel.send(
-        `🔄 **${member.user.username}** rejoined — activity counts reset`
-      );
-    }
-
-    console.log(`Reset counts for rejoined member ${member.user.tag}`);
-
-    // Randomized welcome message
-    const welcomeChannel = await member.guild.channels
-      .fetch(WELCOME_CHANNEL_ID)
       .catch((err) => {
         console.error(
-          `Could not fetch welcome channel ${WELCOME_CHANNEL_ID}:`,
+          `[guildMemberAdd] Could not fetch log channel ${LOG_CHANNEL_ID}:`,
           err.message
         );
         return null;
       });
 
-    if (welcomeChannel) {
-      const randomGreeting =
-        GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
-      await welcomeChannel.send(
-        `${randomGreeting(member)} Come say hi in 👉 <#1465764681661546547> 💬`
-      );
-    } else {
-      console.warn(
-        `Skipped welcome message — channel ${WELCOME_CHANNEL_ID} not found or bot lacks access.`
-      );
-    }
+    if (!logChannel) return;
+
+    await logChannel.send(
+      `🔄 **${member.user.username}** rejoined — activity counts reset`
+    );
   } catch (error) {
     console.error(
-      `Error handling guild member add for ${member.user.tag}:`,
-      error
+      `[guildMemberAdd] Failed to send rejoin log for ${member.user.tag}:`,
+      error.message
     );
   }
+};
+
+const sendWelcomeMessage = async (member) => {
+  try {
+    const welcomeChannel = await member.guild.channels
+      .fetch(WELCOME_CHANNEL_ID)
+      .catch((err) => {
+        console.error(
+          `[guildMemberAdd] Could not fetch welcome channel ${WELCOME_CHANNEL_ID}:`,
+          err.message
+        );
+        return null;
+      });
+
+    if (!welcomeChannel) {
+      console.warn(
+        `[guildMemberAdd] Skipped welcome message for ${member.user.tag} — channel ${WELCOME_CHANNEL_ID} not found or bot lacks access.`
+      );
+      return;
+    }
+
+    // Make sure the bot can actually post here before trying.
+    const me = member.guild.members.me;
+    const perms = welcomeChannel.permissionsFor(me);
+    if (!perms?.has('ViewChannel') || !perms?.has('SendMessages')) {
+      console.warn(
+        `[guildMemberAdd] Skipped welcome message for ${member.user.tag} — missing View Channel/Send Messages permission in ${WELCOME_CHANNEL_ID}.`
+      );
+      return;
+    }
+
+    const randomGreeting =
+      GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
+
+    await welcomeChannel.send(
+      `${randomGreeting(member)} Come say hi in 👉 <#${GENERAL_CHAT_CHANNEL_ID}> 💬`
+    );
+
+    console.log(
+      `[guildMemberAdd] ✅ Welcome message sent for ${member.user.tag} in #${welcomeChannel.name}`
+    );
+  } catch (error) {
+    console.error(
+      `[guildMemberAdd] Failed to send welcome message for ${member.user.tag}:`,
+      error.message
+    );
+  }
+};
+
+export const handleGuildMemberAdd = async (member) => {
+  console.log(`[guildMemberAdd] Member joined: ${member.user.tag}`);
+
+  const wasRejoin = await resetActivityCounts(member);
+  if (wasRejoin) {
+    await logRejoin(member);
+  }
+
+  // Welcome message runs regardless of whether the count-reset/log step
+  // succeeded — these are independent concerns and one failing should
+  // never silently take the other down with it.
+  await sendWelcomeMessage(member);
 };

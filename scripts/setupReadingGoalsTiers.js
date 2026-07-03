@@ -3,7 +3,7 @@ import { Client, GatewayIntentBits } from "discord.js";
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-client.once("ready", async () => {
+client.once("clientReady", async () => {
   const guild = await client.guilds.fetch(process.env.GUILD_ID);
   console.log(`Connected to ${guild.name}.\n`);
 
