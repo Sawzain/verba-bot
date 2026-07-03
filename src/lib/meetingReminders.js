@@ -95,27 +95,56 @@ const fifteenMinMessages = [
 ];
 
 export const scheduleMeetingReminders = (client) => {
-  const sendReminder = async (messagePool) => {
+  const sendReminder = async (messagePool, label) => {
     try {
-      const channel = await client.channels.fetch(MEETING_CHANNEL_ID);
+      const channel = await client.channels.fetch(MEETING_CHANNEL_ID).catch((err) => {
+        console.error(
+          `[meetingReminders] Could not fetch meeting channel ${MEETING_CHANNEL_ID}:`,
+          err.message
+        );
+        return null;
+      });
+
+      if (!channel) {
+        console.warn(
+          `[meetingReminders] Skipped "${label}" reminder — channel ${MEETING_CHANNEL_ID} not found or bot lacks access.`
+        );
+        return;
+      }
+
+      const me = channel.guild?.members?.me;
+      const perms = me ? channel.permissionsFor(me) : null;
+      if (perms && (!perms.has('ViewChannel') || !perms.has('SendMessages'))) {
+        console.warn(
+          `[meetingReminders] Skipped "${label}" reminder — missing View Channel/Send Messages permission in ${MEETING_CHANNEL_ID}.`
+        );
+        return;
+      }
+
       await channel.send(pick(messagePool));
+      console.log(
+        `[meetingReminders] ✅ "${label}" reminder sent in #${channel.name}`
+      );
     } catch (err) {
-      console.error('Failed to send meeting reminder:', err.message);
+      console.error(
+        `[meetingReminders] Failed to send "${label}" reminder:`,
+        err.message
+      );
     }
   };
 
   // Midday - Saturday 12:00 GMT
-  cron.schedule('0 12 * * 6', () => sendReminder(middayMessages), {
+  cron.schedule('0 12 * * 6', () => sendReminder(middayMessages, 'midday'), {
     timezone: 'Etc/UTC',
   });
 
   // 1 hour before - Saturday 14:00 GMT
-  cron.schedule('0 14 * * 6', () => sendReminder(oneHourMessages), {
+  cron.schedule('0 14 * * 6', () => sendReminder(oneHourMessages, '1 hour before'), {
     timezone: 'Etc/UTC',
   });
 
   // 15 minutes before - Saturday 14:45 GMT
-  cron.schedule('45 14 * * 6', () => sendReminder(fifteenMinMessages), {
+  cron.schedule('45 14 * * 6', () => sendReminder(fifteenMinMessages, '15 minutes before'), {
     timezone: 'Etc/UTC',
   });
 };
