@@ -112,6 +112,7 @@ export const handleGuildMemberAdd = async (member) => {
     console.log(`Reset counts for rejoined member ${member.user.tag}`);
 
     // Randomized welcome message
+    console.log(`DEBUG: about to fetch welcome channel ${WELCOME_CHANNEL_ID}`);
     const welcomeChannel = await member.guild.channels
       .fetch(WELCOME_CHANNEL_ID)
       .catch((err) => {
@@ -121,6 +122,10 @@ export const handleGuildMemberAdd = async (member) => {
         );
         return null;
       });
+    console.log(
+      `DEBUG: welcomeChannel fetch resolved:`,
+      welcomeChannel ? welcomeChannel.id : 'null'
+    );
 
     if (welcomeChannel) {
       const randomGreeting =
