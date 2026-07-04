@@ -6,7 +6,7 @@ import { handleGuildMemberAdd } from './events/guildMemberAdd.js';
 import { handleInteraction } from './events/interactionCreate.js';
 import { runVeteranReaderCheck } from './lib/veteranReader.js';
 import { scheduleMeetingReminders } from './lib/meetingReminders.js';
-
+console.log('INDEX.JS BUILD: 2026-07-04 05:56');
 const REQUIRED_ENV_VARS = [
   'DISCORD_TOKEN',
   'GUILD_ID',
