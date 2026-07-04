@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import cron from 'node-cron';
-import { Client, GatewayIntentBits, REST, Routes } from 'discord.js';
+import { Client, GatewayIntentBits, REST, Routes, Events } from 'discord.js';
 import { handleMessageCreate } from './events/messageCreate.js';
 import { handleGuildMemberAdd } from './events/guildMemberAdd.js';
 import { handleInteraction } from './events/interactionCreate.js';
@@ -92,7 +92,7 @@ const commands = [
   },
 ];
 
-client.once('clientReady', async () => {
+client.once(Events.ClientReady, async () => {
   console.log(`Logged in as ${client.user.tag}!`);
 
   const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -114,9 +114,12 @@ client.once('clientReady', async () => {
   scheduleMeetingReminders(client);
   console.log('Meeting reminders scheduled!');
 });
-
 client.on('messageCreate', handleMessageCreate);
 client.on('interactionCreate', handleInteraction);
-client.on('guildMemberAdd', handleGuildMemberAdd);
+
+client.on(Events.GuildMemberAdd, (member) => {
+  console.log('EVENT RECEIVED:', member.user.tag);
+  handleGuildMemberAdd(member);
+});
 
 client.login(process.env.DISCORD_TOKEN);
