@@ -13,3 +13,11 @@ export const GENERAL_CHAT_CHANNEL_ID =
   process.env.GENERAL_CHAT_CHANNEL_ID || '1465764681661546547';
 export const MEETING_CHANNEL_ID =
   process.env.MEETING_CHANNEL_ID || '1463471405835358280';
+
+// Comma-separated list of role IDs allowed to ping @everyone/@here without
+// triggering the anti-spam guard. Set MOD_ROLE_IDS in .env, e.g.
+// MOD_ROLE_IDS=1520000000000000000,1520000000000000001
+export const MOD_ROLE_IDS = (process.env.MOD_ROLE_IDS || '')
+  .split(',')
+  .map((id) => id.trim())
+  .filter(Boolean);
