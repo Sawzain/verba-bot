@@ -31,7 +31,10 @@ const EVERYONE_HERE_TEXT_PATTERN = /@(everyone|here)\b/i;
 
 // ---------- Shared helpers ----------
 
-const logIncident = async (message, { title, color, actionTaken, contentPreview }) => {
+const logIncident = async (
+  message,
+  { title, color, actionTaken, contentPreview }
+) => {
   try {
     const logChannel = await message.guild.channels.fetch(LOG_CHANNEL_ID);
     if (logChannel) {
@@ -97,10 +100,15 @@ const handleHighSeverityViolation = async (message, { type, title }) => {
         EVERYONE_PING_TIMEOUT_MS,
         `${title} — ban failed, fallback timeout (auto-mod)`
       );
-      actionTaken = 'Ban FAILED — fell back to 10 min timeout. Check bot role hierarchy/permissions.';
+      actionTaken =
+        'Ban FAILED — fell back to 10 min timeout. Check bot role hierarchy/permissions.';
     } catch (timeoutErr) {
-      console.error(`Fallback timeout also failed for ${type}:`, timeoutErr.message);
-      actionTaken = 'Ban AND fallback timeout both FAILED — check bot permissions/role hierarchy immediately.';
+      console.error(
+        `Fallback timeout also failed for ${type}:`,
+        timeoutErr.message
+      );
+      actionTaken =
+        'Ban AND fallback timeout both FAILED — check bot permissions/role hierarchy immediately.';
     }
   }
 
@@ -316,11 +324,52 @@ export const handleMessageCreate = async (message) => {
           await message.author.send(
             `Congratulations! You are now a **${qualifyingTier.roleName}**! 🎉`
           );
+          console.log(
+            `✅ DM sent to ${message.author.tag} for role ${qualifyingTier.roleName}`
+          );
         } catch (err) {
           console.warn(
-            `Could not DM ${message.author.tag} about role ${qualifyingTier.roleName}:`,
+            `❌ Could not DM ${message.author.tag} about role ${qualifyingTier.roleName}:`,
+            err.code,
             err.message
           );
+
+          try {
+            const logChannel =
+              await message.guild.channels.fetch(LOG_CHANNEL_ID);
+            if (logChannel) {
+              await logChannel.send({
+                embeds: [
+                  {
+                    title: '⚠️ Role DM failed',
+                    color: 0xffaa00,
+                    fields: [
+                      {
+                        name: 'User',
+                        value: `<@${message.author.id}> (${message.author.tag})`,
+                        inline: true,
+                      },
+                      {
+                        name: 'Role',
+                        value: qualifyingTier.roleName,
+                        inline: true,
+                      },
+                      {
+                        name: 'Error',
+                        value: `\`${err.code ?? 'N/A'}\` ${err.message}`,
+                      },
+                    ],
+                    timestamp: new Date().toISOString(),
+                  },
+                ],
+              });
+            }
+          } catch (logErr) {
+            console.error(
+              'Failed to log DM failure to #bot-logs:',
+              logErr.message
+            );
+          }
         }
       }
     }
