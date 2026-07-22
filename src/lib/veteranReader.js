@@ -59,7 +59,10 @@ export const runVeteranReaderCheck = async (guild) => {
 
           try {
             await member.send(
-              `🎉 Congratulations! You've been in **${guild.name}** for 6+ months and have been promoted to **Book Sage**!`
+              `🌿 Hi ${member.displayName || member.user.username},\n\n` +
+                `We wanted to take a moment to say thank you. Six months have quietly passed since you first joined **${guild.name}**, and in that time you've become part of the fabric of this little community — showing up, sharing thoughts, sitting with us through pages and conversations both light and deep.\n\n` +
+                `In gratitude for that steady presence, we've welcomed you as a **Book Sage**. It's a small gesture, but it comes from a real place: we notice, and we're glad you're here.\n\n` +
+                `Thank you for staying. Here's to many more chapters together. 🌾`
             );
             console.log(`✅ DM sent to ${member.user.tag} for Book Sage`);
           } catch (dmErr) {

@@ -322,7 +322,10 @@ export const handleMessageCreate = async (message) => {
       if (roleChanged) {
         try {
           await message.author.send(
-            `Congratulations! You are now a **${qualifyingTier.roleName}**! 🎉`
+            `🌾 Hi ${message.author.username},\n\n` +
+              `We noticed something worth pausing on — your words have carried you to **${qualifyingTier.roleName}**. It's not a big, loud thing, just a quiet marker of how often you've chosen to show up and share a little piece of yourself with us.\n\n` +
+              `Thank you for that. This community is made of small moments like yours, stitched together — and we're genuinely grateful you're part of it.\n\n` +
+              `With warmth, 🌿 the Verba team`
           );
           console.log(
             `✅ DM sent to ${message.author.tag} for role ${qualifyingTier.roleName}`
