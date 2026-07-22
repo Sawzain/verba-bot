@@ -8,22 +8,22 @@ A Discord bot for the Verba Book Club server that tracks member activity and ass
 
 Automatically assigns roles based on message activity in specific channels.
 
-| Channel           | Roles                                   | Thresholds     |
-| ----------------- | --------------------------------------- | -------------- |
-| poetry-corner     | Versifier → Lyricist → Laureate         | 5 → 20 → 50    |
-| quotes-highlights | Collector → Curator → Archivist         | 5 → 20 → 50    |
-| monthly-reviews   | Reviewer                                | 1              |
-| reading-goals     | Goal Setter                             | 1              |
-| general-chat      | Chatterbox → Conversationalist → Orator | 50 → 250 → 500 |
+| Channel           | Roles                                             | Thresholds     |
+| ----------------- | ------------------------------------------------- | -------------- |
+| poetry-corner     | Stanza Seed → Verse Weaver → Poet Laureate        | 5 → 20 → 50    |
+| quotes-highlights | Highlight Scout → Passage Curator → Memory Keeper | 5 → 20 → 50    |
+| monthly-reviews   | Seasoned Reader                                   | 1              |
+| reading-goals     | Reader → Dedicated Reader → Bookkeeper            | 1 → 10 → 25    |
+| general-chat      | Page Chatter → Conversationalist → Orator         | 50 → 250 → 500 |
 
 ### ⏱️ Cooldown
 
-- 1 message counted per user per channel every **60 seconds**
-- Minimum **10 words** required to count
+- 1 message counted per user per channel every 60 seconds
+- Minimum 10 words required to count
 
-### 🏅 Veteran Reader
+### 🏅 Book Sage (Veteran Reader)
 
-- Automatically granted to members who have been in the server for **6+ months**
+- Automatically granted to members who have been in the server for 6+ months
 - Checked daily via cron job at midnight
 
 ### 📊 Slash Commands
@@ -34,24 +34,24 @@ Automatically assigns roles based on message activity in specific channels.
 
 ### 📝 Logging
 
-- All role promotions and resets are logged to `#bot-logs`
+All role promotions and resets are logged to #bot-logs
 
 ### 🔄 Rejoin Reset
 
-- If a member leaves and rejoins, their activity counts are reset
+If a member leaves and rejoins, their activity counts are reset
 
 ## Tech Stack
 
-- **Discord.js** v14
-- **Supabase** (PostgreSQL) for activity tracking
-- **node-cron** for scheduled jobs
-- **Railway** for 24/7 hosting
+- Discord.js v14
+- Supabase (PostgreSQL) for activity tracking
+- node-cron for scheduled jobs
+- Wispbyte for 24/7 hosting
 
 ## Setup
 
 ### 1. Install dependencies
 
-```bash
+```
 npm install
 ```
 
@@ -59,13 +59,12 @@ npm install
 
 Create a `.env` file:
 
+```
 DISCORD_TOKEN=your-discord-bot-token
-
 SUPABASE_URL=https://your-project.supabase.co
-
 SUPABASE_KEY=your-service-role-key
-
 GUILD_ID=your-guild-id
+```
 
 ### 3. Set up Supabase
 
@@ -105,16 +104,16 @@ $$ LANGUAGE plpgsql;
 
 ### 4. Create roles in Discord
 
-```bash
+```
 node src/scripts/setupRoles.js
 ```
 
 ### 5. Run the bot
 
-```bash
+```
 node src/index.js
 ```
 
 ## Deployment
 
-Hosted on Railway. Auto-deploys on every push to `main`.
+Hosted on Wispbyte. Auto-deploys on every push to `main` (git pull runs on server restart via the startup script).
