@@ -1,3 +1,23 @@
+// Users and roles that should be excluded from all automated moderation
+// actions (flood/duplicate/mass-mention/suspicious-link checks, timeouts,
+// message deletion for @everyone/@here pings, etc).
+//
+// - EXEMPT_USER_IDS: hardcoded fallback, always checked regardless of roles.
+//   Replace the placeholders below with real Discord user IDs
+//   (right-click a user in Discord with Developer Mode on -> Copy User ID).
+// - EXEMPT_ROLE_IDS: any member holding one of these roles is also exempt.
+//   Create a role in your server (e.g. "Exempt" or "Owner"), assign it to
+//   yourself and your partner, then paste its role ID below.
+export const EXEMPT_USER_IDS = [
+  "557289409347715103", // Sajen
+  "714907908722131007", // Viktoriia
+];
+
+export const EXEMPT_ROLE_IDS = [
+  // Optional: add a role ID here if you create an "Exempt" role in Discord
+  // and want anyone with that role to also bypass moderation.
+];
+
 export const roleConfig = {
   ROLE_IDS: {
     // Poetry Corner

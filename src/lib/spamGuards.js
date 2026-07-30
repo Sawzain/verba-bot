@@ -1,5 +1,6 @@
 import { PermissionsBitField } from 'discord.js';
 import { MOD_ROLE_IDS } from '../config/channelIds.js';
+import { EXEMPT_USER_IDS, EXEMPT_ROLE_IDS } from '../config/roleTiers.js';
 
 // ---- Tunable thresholds ----
 export const FLOOD_WINDOW_MS = 4000; // 4 seconds
@@ -53,6 +54,8 @@ setInterval(() => {
 export const isTrustedMember = (member) => {
   if (!member) return false;
   return (
+    EXEMPT_USER_IDS.includes(member.id) ||
+    EXEMPT_ROLE_IDS.some((roleId) => member.roles.cache.has(roleId)) ||
     member.permissions.has(PermissionsBitField.Flags.Administrator) ||
     MOD_ROLE_IDS.some((roleId) => member.roles.cache.has(roleId))
   );
