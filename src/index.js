@@ -5,6 +5,7 @@ import { handleMessageCreate } from './events/messageCreate.js';
 import { handleGuildMemberAdd } from './events/guildMemberAdd.js';
 import { handleInteraction } from './events/interactionCreate.js';
 import { runVeteranReaderCheck } from './lib/veteranReader.js';
+import { runTempBanExpiryCheck } from './lib/tempBanExpiry.js';
 import { scheduleMeetingReminders } from './lib/meetingReminders.js';
 console.log('INDEX.JS BUILD: 2026-07-04 05:56');
 const REQUIRED_ENV_VARS = [
@@ -106,10 +107,16 @@ client.once(Events.ClientReady, async () => {
   const guild = await client.guilds.fetch(process.env.GUILD_ID);
   await runVeteranReaderCheck(guild);
 
+  console.log('Running initial temp ban expiry check...');
+  await runTempBanExpiryCheck(guild);
+
   cron.schedule('0 0 * * *', async () => {
     console.log('Running scheduled Veteran Reader check...');
     const guild = await client.guilds.fetch(process.env.GUILD_ID);
     await runVeteranReaderCheck(guild);
+
+    console.log('Running scheduled temp ban expiry check...');
+    await runTempBanExpiryCheck(guild);
   });
   scheduleMeetingReminders(client);
   console.log('Meeting reminders scheduled!');

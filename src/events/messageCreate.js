@@ -8,6 +8,7 @@ import {
 import {
   incrementEveryonePingStrike,
   resetEveryonePingStrike,
+  recordTempBan,
 } from '../lib/moderationStrikes.js';
 import {
   isTrustedMember,
@@ -19,7 +20,9 @@ import {
 
 const cooldowns = new Map();
 
-const EVERYONE_PING_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+// Strike 1 -> 1 min timeout, strike 2 -> 10 min timeout, strike 3 -> temp ban.
+const EVERYONE_PING_TIMEOUT_STAGES_MS = [1 * 60 * 1000, 10 * 60 * 1000];
+const TEMP_BAN_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days, then auto-unban
 const STRIKES_BEFORE_BAN = 3;
 
 // Matches "@everyone" / "@here" as literal text, regardless of whether Discord
@@ -97,7 +100,7 @@ const handleHighSeverityViolation = async (message, { type, title }) => {
     // this isn't a complete no-op.
     try {
       await message.member.timeout(
-        EVERYONE_PING_TIMEOUT_MS,
+        EVERYONE_PING_TIMEOUT_STAGES_MS[EVERYONE_PING_TIMEOUT_STAGES_MS.length - 1],
         `${title} — ban failed, fallback timeout (auto-mod)`
       );
       actionTaken =
@@ -158,29 +161,40 @@ const handleUnauthorizedEveryonePing = async (message) => {
       await member.ban({
         reason: `Unauthorized @everyone/@here ping — strike ${effectiveStrikeCount}/${STRIKES_BEFORE_BAN} (auto-mod)`,
       });
-      actionTaken = `Banned (strike ${effectiveStrikeCount}/${STRIKES_BEFORE_BAN})`;
+      const unbanAt = new Date(Date.now() + TEMP_BAN_DURATION_MS);
+      await recordTempBan(member.id, message.guild.id, unbanAt);
+      actionTaken = `Banned for 30 days, auto-unban scheduled (strike ${effectiveStrikeCount}/${STRIKES_BEFORE_BAN})`;
       await resetEveryonePingStrike(member.id, message.guild.id);
     } catch (err) {
       console.error(
         'Failed to ban member for repeated @everyone/@here pings:',
         err.message
       );
-      // Ban failed — fall back to a timeout so the offense isn't a total no-op.
+      // Ban failed — fall back to the longest timeout stage so the offense
+      // isn't a total no-op.
+      const fallbackMs =
+        EVERYONE_PING_TIMEOUT_STAGES_MS[
+          EVERYONE_PING_TIMEOUT_STAGES_MS.length - 1
+        ];
       try {
         await member.timeout(
-          EVERYONE_PING_TIMEOUT_MS,
+          fallbackMs,
           `Unauthorized @everyone/@here ping — strike ${effectiveStrikeCount}/${STRIKES_BEFORE_BAN}, ban failed, fallback timeout (auto-mod)`
         );
-        actionTaken = `Ban FAILED (strike ${effectiveStrikeCount}/${STRIKES_BEFORE_BAN}) — fell back to 10 min timeout. Check bot role hierarchy/permissions.`;
+        actionTaken = `Ban FAILED (strike ${effectiveStrikeCount}/${STRIKES_BEFORE_BAN}) — fell back to ${fallbackMs / 60000} min timeout. Check bot role hierarchy/permissions.`;
       } catch (timeoutErr) {
         console.error('Fallback timeout also failed:', timeoutErr.message);
         actionTaken = `Ban AND fallback timeout both FAILED (strike ${effectiveStrikeCount}/${STRIKES_BEFORE_BAN}) — check bot permissions/role hierarchy immediately.`;
       }
     }
   } else {
+    const timeoutMs =
+      EVERYONE_PING_TIMEOUT_STAGES_MS[effectiveStrikeCount - 1] ??
+      EVERYONE_PING_TIMEOUT_STAGES_MS[EVERYONE_PING_TIMEOUT_STAGES_MS.length - 1];
+
     try {
       await member.timeout(
-        EVERYONE_PING_TIMEOUT_MS,
+        timeoutMs,
         `Unauthorized @everyone/@here ping — strike ${effectiveStrikeCount}/${STRIKES_BEFORE_BAN} (auto-mod)`
       );
     } catch (err) {
@@ -189,13 +203,13 @@ const handleUnauthorizedEveryonePing = async (message) => {
         err.message
       );
     }
-    actionTaken = `Timed out ${EVERYONE_PING_TIMEOUT_MS / 60000} min (strike ${effectiveStrikeCount}/${STRIKES_BEFORE_BAN})`;
+    actionTaken = `Timed out ${timeoutMs / 60000} min (strike ${effectiveStrikeCount}/${STRIKES_BEFORE_BAN})`;
 
     // Warn the member by DM on strikes 1 and 2 (not sent on the ban strike)
     try {
       await member.send(
-        `⚠️ Your message ping to @everyone/@here in **${message.guild.name}** was removed and you've been timed out for ${EVERYONE_PING_TIMEOUT_MS / 60000} minutes.\n\n` +
-          `This is strike **${effectiveStrikeCount} of ${STRIKES_BEFORE_BAN}**. Reaching strike ${STRIKES_BEFORE_BAN} results in a ban. ` +
+        `⚠️ Your message ping to @everyone/@here in **${message.guild.name}** was removed and you've been timed out for ${timeoutMs / 60000} minutes.\n\n` +
+          `This is strike **${effectiveStrikeCount} of ${STRIKES_BEFORE_BAN}**. Reaching strike ${STRIKES_BEFORE_BAN} results in a 30-day ban. ` +
           `Strikes expire automatically after 30 days of good behavior.`
       );
     } catch (err) {
