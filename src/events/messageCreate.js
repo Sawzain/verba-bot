@@ -17,6 +17,7 @@ import {
   isSuspiciousLink,
   isMassMention,
 } from '../lib/spamGuards.js';
+import { shouldCaptureQuote, captureQuote } from '../lib/quoteCapture.js';
 
 const cooldowns = new Map();
 
@@ -100,7 +101,9 @@ const handleHighSeverityViolation = async (message, { type, title }) => {
     // this isn't a complete no-op.
     try {
       await message.member.timeout(
-        EVERYONE_PING_TIMEOUT_STAGES_MS[EVERYONE_PING_TIMEOUT_STAGES_MS.length - 1],
+        EVERYONE_PING_TIMEOUT_STAGES_MS[
+          EVERYONE_PING_TIMEOUT_STAGES_MS.length - 1
+        ],
         `${title} — ban failed, fallback timeout (auto-mod)`
       );
       actionTaken =
@@ -190,7 +193,9 @@ const handleUnauthorizedEveryonePing = async (message) => {
   } else {
     const timeoutMs =
       EVERYONE_PING_TIMEOUT_STAGES_MS[effectiveStrikeCount - 1] ??
-      EVERYONE_PING_TIMEOUT_STAGES_MS[EVERYONE_PING_TIMEOUT_STAGES_MS.length - 1];
+      EVERYONE_PING_TIMEOUT_STAGES_MS[
+        EVERYONE_PING_TIMEOUT_STAGES_MS.length - 1
+      ];
 
     try {
       await member.timeout(
@@ -293,6 +298,15 @@ export const handleMessageCreate = async (message) => {
       console.log(`SKIPPED: ${channelConfig.key} message too short`);
       return;
     }
+  }
+
+  // Save qualifying quotes-highlights/poetry-corner posts to Supabase for
+  // the Quote Wall. Runs for every post that passed the substance check
+  // above — intentionally not gated by the cooldown below, since that
+  // cooldown exists to prevent role-tier point farming, not to limit which
+  // posts are worth keeping.
+  if (shouldCaptureQuote(channelConfig)) {
+    await captureQuote(message, channelConfig);
   }
 
   // Light anti-farm rule for general-chat: blocks single-word spam, allows attachments through
