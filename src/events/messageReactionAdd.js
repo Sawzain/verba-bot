@@ -12,23 +12,7 @@ function isModerator(member) {
 
 export async function handleMessageReactionAdd(reaction, user) {
   if (user.bot) return;
-
-  console.log(
-    '[verba-wall] reaction received:',
-    reaction.emoji.name,
-    'from',
-    user.tag
-  );
-
-  if (reaction.emoji.name !== APPROVAL_EMOJI) {
-    console.log(
-      '[verba-wall] emoji mismatch, expected',
-      APPROVAL_EMOJI,
-      'got',
-      reaction.emoji.name
-    );
-    return;
-  }
+  if (reaction.emoji.name !== APPROVAL_EMOJI) return;
 
   if (reaction.partial) {
     try {
@@ -54,36 +38,18 @@ export async function handleMessageReactionAdd(reaction, user) {
   }
 
   const message = reaction.message;
-  if (!message.guild) return;
+  if (!message.guild) return; // ignore DMs
 
   const channelConfig = roleTiers.CHANNELS.find(
     (c) => c.channelId === message.channel.id
-  );
-  console.log(
-    '[verba-wall] message channel id:',
-    message.channel.id,
-    '-> matched config:',
-    channelConfig?.key ?? 'NONE'
   );
   if (!channelConfig || !CAPTURE_CHANNEL_KEYS.includes(channelConfig.key))
     return;
 
   const member = await message.guild.members.fetch(user.id).catch(() => null);
-  console.log(
-    '[verba-wall] member id:',
-    user.id,
-    'roles:',
-    member?.roles.cache.map((r) => r.id)
-  );
-  console.log('[verba-wall] MOD_ROLE_IDS currently:', MOD_ROLE_IDS);
-
-  if (!isModerator(member)) {
-    console.log('[verba-wall] isModerator returned false, skipping approval');
-    return;
-  }
+  if (!isModerator(member)) return; // only mod-role reactions approve content
 
   const messageUrl = `https://discord.com/channels/${message.guildId}/${message.channelId}/${message.id}`;
-  console.log('[verba-wall] attempting update for url:', messageUrl);
 
   const { data, error } = await supabase
     .from('quotes')
@@ -96,15 +62,14 @@ export async function handleMessageReactionAdd(reaction, user) {
     return;
   }
 
-  console.log('[verba-wall] update matched rows:', data?.length ?? 0);
-
-  if (!data || data.length === 0) {
-    return;
-  }
+  if (!data || data.length === 0) return;
 
   await message
     .react('🌟')
     .catch((err) =>
-      console.error('[verba-wall] failed to react with star:', err.message)
+      console.error(
+        '[verba-wall approval] Failed to react with star:',
+        err.message
+      )
     );
 }
