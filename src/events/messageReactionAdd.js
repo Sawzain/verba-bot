@@ -5,14 +5,13 @@ import roleTiers from '../config/roleTiers.js';
 const APPROVAL_EMOJI = '✅';
 const CAPTURE_CHANNEL_KEYS = ['quotes-highlights', 'poetry-corner'];
 
-function isModerator(member) {
+export function isModerator(member) {
   if (!member) return false;
   return member.roles.cache.some((role) => MOD_ROLE_IDS.includes(role.id));
 }
 
 export async function handleMessageReactionAdd(reaction, user) {
   if (user.bot) return;
-  if (reaction.emoji.name !== APPROVAL_EMOJI) return;
 
   if (reaction.partial) {
     try {
@@ -46,30 +45,48 @@ export async function handleMessageReactionAdd(reaction, user) {
   if (!channelConfig || !CAPTURE_CHANNEL_KEYS.includes(channelConfig.key))
     return;
 
-  const member = await message.guild.members.fetch(user.id).catch(() => null);
-  if (!isModerator(member)) return; // only mod-role reactions approve content
-
   const messageUrl = `https://discord.com/channels/${message.guildId}/${message.channelId}/${message.id}`;
+  const member = await message.guild.members.fetch(user.id).catch(() => null);
+  const isApprovalReact =
+    reaction.emoji.name === APPROVAL_EMOJI && isModerator(member);
 
-  const { data, error } = await supabase
-    .from('quotes')
-    .update({ is_approved: true })
-    .eq('discord_message_url', messageUrl)
-    .select();
+  if (isApprovalReact) {
+    const { data, error } = await supabase
+      .from('quotes')
+      .update({ is_approved: true })
+      .eq('discord_message_url', messageUrl)
+      .select();
 
-  if (error) {
-    console.error('[verba-wall approval] Failed to approve:', error.message);
+    if (error) {
+      console.error('[verba-wall approval] Failed to approve:', error.message);
+      return;
+    }
+
+    if (!data || data.length === 0) return;
+
+    await message
+      .react('🌟')
+      .catch((err) =>
+        console.error(
+          '[verba-wall approval] Failed to react with star:',
+          err.message
+        )
+      );
     return;
   }
 
-  if (!data || data.length === 0) return;
+  // Any other reaction — including a non-mod ✅ — counts as audience
+  // interest. Mod ✅ is a workflow signal (approval), not engagement,
+  // so it's excluded above rather than falling through to here.
+  const { error: countError } = await supabase.rpc('increment_reaction_count', {
+    target_url: messageUrl,
+    delta: 1,
+  });
 
-  await message
-    .react('🌟')
-    .catch((err) =>
-      console.error(
-        '[verba-wall approval] Failed to react with star:',
-        err.message
-      )
+  if (countError) {
+    console.error(
+      '[verba-wall reactions] Failed to increment count:',
+      countError.message
     );
+  }
 }

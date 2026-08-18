@@ -8,6 +8,7 @@ import { runVeteranReaderCheck } from './lib/veteranReader.js';
 import { runTempBanExpiryCheck } from './lib/tempBanExpiry.js';
 import { scheduleMeetingReminders } from './lib/meetingReminders.js';
 import { handleMessageReactionAdd } from './events/messageReactionAdd.js';
+import { handleMessageReactionRemove } from './events/messageReactionRemove.js';
 console.log('INDEX.JS BUILD: 2026-07-04 05:56');
 const REQUIRED_ENV_VARS = [
   'DISCORD_TOKEN',
@@ -125,6 +126,7 @@ client.once(Events.ClientReady, async () => {
 client.on('messageCreate', handleMessageCreate);
 client.on('interactionCreate', handleInteraction);
 client.on('messageReactionAdd', handleMessageReactionAdd);
+client.on('messageReactionRemove', handleMessageReactionRemove);
 
 client.on(Events.GuildMemberAdd, (member) => {
   console.log('EVENT RECEIVED:', member.user.tag);
