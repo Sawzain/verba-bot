@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import cron from 'node-cron';
-import { Client, GatewayIntentBits, REST, Routes, Events } from 'discord.js';
+import { Client, GatewayIntentBits, Partials, REST, Routes, Events } from 'discord.js';
 import { handleMessageCreate } from './events/messageCreate.js';
 import { handleGuildMemberAdd } from './events/guildMemberAdd.js';
 import { handleInteraction } from './events/interactionCreate.js';
@@ -41,6 +41,11 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMessageReactions,
+  ],
+  partials: [
+    Partials.Message,
+    Partials.Channel,
+    Partials.Reaction,
   ],
 });
 
