@@ -5,6 +5,10 @@ function toPayload(member) {
     discordId: member.user.id,
     username: member.user.username,
     displayName: member.displayName,
+    roles: [...member.roles.cache.values()]
+      .filter((r) => r.id !== member.guild.id && !r.managed)
+      .sort((a, b) => b.position - a.position)
+      .map((r) => ({ id: r.id, name: r.name, color: r.hexColor })),
   };
 }
 
