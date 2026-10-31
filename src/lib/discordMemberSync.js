@@ -35,11 +35,27 @@ async function sendBatch(members) {
   });
 }
 
+// Reads the member list over REST (pages of 1000). This avoids the
+// gateway's tight limit on full member requests, which the Veteran
+// Reader check at startup already uses up.
+async function listAllMembers(guild) {
+  const all = [];
+  let after;
+  for (;;) {
+    const page = await guild.members.list({ limit: 1000, after });
+    if (page.size === 0) break;
+    all.push(...page.values());
+    if (page.size < 1000) break;
+    after = page.last().id;
+  }
+  return all;
+}
+
 // Full sweep: send every non-bot member of the server, in batches.
 export async function syncAllMembers(guild) {
   try {
-    const fetched = await guild.members.fetch();
-    const list = [...fetched.values()]
+    const members = await listAllMembers(guild);
+    const list = members
       .filter((m) => !m.user.bot)
       .map(toPayload);
     for (let i = 0; i < list.length; i += BATCH_SIZE) {
