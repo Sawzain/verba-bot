@@ -9,6 +9,7 @@ import { runTempBanExpiryCheck } from './lib/tempBanExpiry.js';
 import { scheduleMeetingReminders } from './lib/meetingReminders.js';
 import { handleMessageReactionAdd } from './events/messageReactionAdd.js';
 import { handleMessageReactionRemove } from './events/messageReactionRemove.js';
+import { syncAllMembers, syncMember, removeMember } from './lib/discordMemberSync.js';
 console.log('INDEX.JS BUILD: 2026-07-04 05:56');
 const REQUIRED_ENV_VARS = [
   'DISCORD_TOKEN',
@@ -117,6 +118,9 @@ client.once(Events.ClientReady, async () => {
   console.log('Running initial temp ban expiry check...');
   await runTempBanExpiryCheck(guild);
 
+  console.log('Syncing member list to the backend...');
+  await syncAllMembers(guild);
+
   cron.schedule('0 0 * * *', async () => {
     console.log('Running scheduled Veteran Reader check...');
     const guild = await client.guilds.fetch(process.env.GUILD_ID);
@@ -136,6 +140,10 @@ client.on('messageReactionRemove', handleMessageReactionRemove);
 client.on(Events.GuildMemberAdd, (member) => {
   console.log('EVENT RECEIVED:', member.user.tag);
   handleGuildMemberAdd(member);
+  syncMember(member);
 });
+
+client.on(Events.GuildMemberRemove, (member) => removeMember(member.id));
+client.on(Events.GuildMemberUpdate, (_old, member) => syncMember(member));
 
 client.login(process.env.DISCORD_TOKEN);
